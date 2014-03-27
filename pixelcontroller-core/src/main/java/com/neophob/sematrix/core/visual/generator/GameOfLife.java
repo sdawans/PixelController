@@ -34,6 +34,9 @@ public class GameOfLife extends Generator {
 
     private int color;
 
+    private final int MODE_RANDOM = 0;
+    private final int MODE_GLIDER = 1;
+
     /**
      * Instantiates a new GameOfLife.
      * 
@@ -45,7 +48,7 @@ public class GameOfLife extends Generator {
         last = new boolean[game_x][game_y];
         next = new boolean[game_x][game_y];
         color = 0;
-        init();
+        reset(MODE_RANDOM);
     }
 
     /*
@@ -70,21 +73,48 @@ public class GameOfLife extends Generator {
                 this.internalBuffer[y * internalBufferXSize + x] = next[xp][yp] ? 180 : 0;
             }
         }
+
+        if (cleared()){
+            reset(MODE_GLIDER);
+        }
+    }
+
+    private boolean cleared(){
+        int count = 0;
+        for (int y = 0; y < game_y; y++) {
+            for (int x = 0; x < game_x; x++) {
+                if(last[x][y]){
+                    count++;
+                }
+            }
+        }
+        return count == 0;
     }
 
     /* Initial state generation */
-    private void init() {
-        for (int y = 0; y < game_y; y++) {
-            for (int x = 0; x < game_x; x++) {
-                last[x][y] = false;
-            }
+    private void reset(int mode) {
+        switch (mode) {
+            case MODE_RANDOM:
+                for (int y = 0; y < game_y; y++) {
+                    for (int x = 0; x < game_x; x++) {
+                        last[x][y] = Math.random() > 0.7;
+                    }
+                }
+                break;
+            case MODE_GLIDER:
+                for (int y = 0; y < game_y; y++) {
+                    for (int x = 0; x < game_x; x++) {
+                        last[x][y] = false;
+                    }
+                }
+
+                last[3][2] = true;
+                last[4][3] = true;
+                last[2][4] = true;
+                last[3][4] = true;
+                last[4][4] = true;
+                break;
         }
-        /* Glider */
-        last[3][2] = true;
-        last[4][3] = true;
-        last[2][4] = true;
-        last[3][4] = true;
-        last[4][4] = true;
     }
 
     private void step() {
