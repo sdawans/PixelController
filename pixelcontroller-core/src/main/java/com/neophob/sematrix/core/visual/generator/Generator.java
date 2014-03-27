@@ -98,6 +98,9 @@ public abstract class Generator implements IShuffleState {
 
         NOISE(18),
 
+        /** The GAME OF LIFE Generator */
+        GAME_OF_LIFE(19),
+
         ;
 
         /** The id. */
