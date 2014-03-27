@@ -101,14 +101,13 @@ public class GameOfLife extends Generator {
     }
 
     private int getAliveNeighbors(int xpos, int ypos) {
-        int count = 0;
+        int count = 0, xx, yy;
         for (int y=ypos-1; y<=ypos+1; y++){
             for (int x=xpos-1; x<=xpos+1; x++){
-                if (x >= 0 &&
-                    y >= 0 &&
-                    x < game_x &&
-                    y < game_y &&
-                    last[x][y]) {
+                xx = (x % game_x + game_x) % game_x;
+                yy = (y % game_y + game_y) % game_y;
+
+                if (last[xx][yy]) {
                     count++;
                 }
             }
