@@ -73,22 +73,31 @@ public class GameOfLife extends Generator {
                 this.internalBuffer[y * internalBufferXSize + x] = next[xp][yp] ? 180 : 0;
             }
         }
-
-        if (cleared()){
-            reset(MODE_GLIDER);
-        }
     }
 
-    private boolean cleared(){
+    private boolean stuck(){
+        /* Stuck if no more alive pixels */
         int count = 0;
         for (int y = 0; y < game_y; y++) {
             for (int x = 0; x < game_x; x++) {
-                if(last[x][y]){
+                if(next[x][y]){
                     count++;
                 }
             }
         }
-        return count == 0;
+        if (count == 0){
+            return true;
+        }
+
+        /* Stuck if image next is same as last */
+        for (int y = 0; y < game_y; y++) {
+            for (int x = 0; x < game_x; x++) {
+                if(last[x][y] != next[x][y]){
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /* Initial state generation */
@@ -115,6 +124,11 @@ public class GameOfLife extends Generator {
                 last[4][4] = true;
                 break;
         }
+        for (int y = 0; y < game_y; y++) {
+            for (int x = 0; x < game_x; x++) {
+                next[x][y] = last[x][y];
+            }
+        }
     }
 
     private void step() {
@@ -123,6 +137,11 @@ public class GameOfLife extends Generator {
                 next[x][y] = willLive(last[x][y], getAliveNeighbors(x,y));
             }
         }
+
+        if (stuck()){
+            reset(MODE_GLIDER);
+        }
+
         for (int y = 0; y < game_y; y++) {
             for (int x = 0; x < game_x; x++) {
                 last[x][y] = next[x][y];
