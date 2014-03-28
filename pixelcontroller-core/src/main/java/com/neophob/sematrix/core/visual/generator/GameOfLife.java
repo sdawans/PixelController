@@ -34,6 +34,7 @@ public class GameOfLife extends Generator {
 
     private final int MODE_RANDOM = 0;
     private final int MODE_GLIDER = 1;
+    private final int MODE_LWSS = 2;
 
     /**
      * Instantiates a new GameOfLife.
@@ -99,6 +100,15 @@ public class GameOfLife extends Generator {
         return true;
     }
 
+    private void clear(boolean[][] array) {
+        /* Set all pixels to dead */
+        for (int y = 0; y < game_y; y++) {
+            for (int x = 0; x < game_x; x++) {
+                array[x][y] = false;
+            }
+        }
+    }
+
     /* Initial state generation according to a mode */
     private void reset(int mode) {
         switch (mode) {
@@ -114,16 +124,32 @@ public class GameOfLife extends Generator {
              * http://en.wikipedia.org/wiki/File:Game_of_life_animated_glider.gif
              */
             case MODE_GLIDER:
-                for (int y = 0; y < game_y; y++) {
-                    for (int x = 0; x < game_x; x++) {
-                        last[x][y] = false;
-                    }
-                }
+                clear(last);
+                /* Place glider in top left corner, should work on any board size */
                 last[3][2] = true;
                 last[4][3] = true;
                 last[2][4] = true;
                 last[3][4] = true;
                 last[4][4] = true;
+                break;
+            /* LWSS: Light Weight Spaceship
+             * http://en.wikipedia.org/wiki/File:Game_of_life_animated_LWSS.gif
+             */
+            case MODE_LWSS:
+                clear(last);
+                /* Place spaceship in center left */
+                last[3][2] = true;
+                last[4][2] = true;
+                last[1][3] = true;
+                last[2][3] = true;
+                last[4][3] = true;
+                last[5][3] = true;
+                last[1][4] = true;
+                last[2][4] = true;
+                last[3][4] = true;
+                last[4][4] = true;
+                last[2][5] = true;
+                last[3][5] = true;
                 break;
         }
         /* Set the initial for next as well because we can call init
@@ -149,7 +175,7 @@ public class GameOfLife extends Generator {
          * If the game of life is stuck, switch to GLIDER mode.
          */
         if (stuck()){
-            reset(MODE_GLIDER);
+            reset(MODE_LWSS);
         }
 
         /* Save the state in last [][] */
