@@ -32,8 +32,6 @@ public class GameOfLife extends Generator {
     private int game_x = 8;
     private int game_y = 8;
 
-    private int color;
-
     private final int MODE_RANDOM = 0;
     private final int MODE_GLIDER = 1;
 
@@ -47,7 +45,6 @@ public class GameOfLife extends Generator {
         super(matrix, GeneratorName.GAME_OF_LIFE, ResizeName.QUALITY_RESIZE);
         last = new boolean[game_x][game_y];
         next = new boolean[game_x][game_y];
-        color = 0;
         reset(MODE_RANDOM);
     }
 
@@ -64,10 +61,11 @@ public class GameOfLife extends Generator {
             step();
         }
 
-        // draw
+        /* Rendering */
         int xp,yp;
         for (int y = 0; y < internalBufferYSize; y++) {
             for (int x = 0; x < internalBufferXSize; x++) {
+                /* Convert board coordinates to internal buffer coordinates */
                 xp = game_x < internalBufferXSize ? x * game_x / internalBufferXSize : x;
                 yp = game_y < internalBufferYSize ? y * game_y / internalBufferYSize : y;
                 this.internalBuffer[y * internalBufferXSize + x] = next[xp][yp] ? 180 : 0;
@@ -93,6 +91,7 @@ public class GameOfLife extends Generator {
         for (int y = 0; y < game_y; y++) {
             for (int x = 0; x < game_x; x++) {
                 if(last[x][y] != next[x][y]){
+                    /* At least 1 pixel is different, we're not stuck */
                     return false;
                 }
             }
@@ -100,9 +99,10 @@ public class GameOfLife extends Generator {
         return true;
     }
 
-    /* Initial state generation */
+    /* Initial state generation according to a mode */
     private void reset(int mode) {
         switch (mode) {
+            /* RANDOM mode fills the board with 30% pixels */
             case MODE_RANDOM:
                 for (int y = 0; y < game_y; y++) {
                     for (int x = 0; x < game_x; x++) {
@@ -110,13 +110,15 @@ public class GameOfLife extends Generator {
                     }
                 }
                 break;
+            /* GLIDER mode is the popular infinite glider
+             * http://en.wikipedia.org/wiki/File:Game_of_life_animated_glider.gif
+             */
             case MODE_GLIDER:
                 for (int y = 0; y < game_y; y++) {
                     for (int x = 0; x < game_x; x++) {
                         last[x][y] = false;
                     }
                 }
-
                 last[3][2] = true;
                 last[4][3] = true;
                 last[2][4] = true;
@@ -124,6 +126,9 @@ public class GameOfLife extends Generator {
                 last[4][4] = true;
                 break;
         }
+        /* Set the initial for next as well because we can call init
+         * AFTER a certain step when we detect we are stuck. We can thus render 
+         * automatically without stepping again. */
         for (int y = 0; y < game_y; y++) {
             for (int x = 0; x < game_x; x++) {
                 next[x][y] = last[x][y];
@@ -131,17 +136,23 @@ public class GameOfLife extends Generator {
         }
     }
 
+    /* Updates the game of life state */
     private void step() {
+        /* Next iteration, set the next state of each pixel en next[][] */
         for (int y = 0; y < game_y; y++) {
             for (int x = 0; x < game_x; x++) {
                 next[x][y] = willLive(last[x][y], getAliveNeighbors(x,y));
             }
         }
 
+        /* Before rendering, check if we're stuck.
+         * If the game of life is stuck, switch to GLIDER mode.
+         */
         if (stuck()){
             reset(MODE_GLIDER);
         }
 
+        /* Save the state in last [][] */
         for (int y = 0; y < game_y; y++) {
             for (int x = 0; x < game_x; x++) {
                 last[x][y] = next[x][y];
@@ -150,23 +161,33 @@ public class GameOfLife extends Generator {
     }
 
     private int getAliveNeighbors(int xpos, int ypos) {
-        int count = 0, xx, yy;
+        int count = 0, x_wrap, y_wrap;
         for (int y=ypos-1; y<=ypos+1; y++){
             for (int x=xpos-1; x<=xpos+1; x++){
-                xx = (x % game_x + game_x) % game_x;
-                yy = (y % game_y + game_y) % game_y;
+                /* Wrap around borders by converting (x,y) to (x_wrap,y_wrap)
+                 * The double modulus and addition converts negative modulus
+                 * to the wrapped positive modulus i.e. for an 8x8 board, -1 --> 7
+                 */
+                x_wrap = (x % game_x + game_x) % game_x;
+                y_wrap = (y % game_y + game_y) % game_y;
 
-                if (last[xx][yy]) {
+                if (last[x_wrap][y_wrap]) {
                     count++;
                 }
             }
         }
+        /* We covered the 3x3 box of 8 neighbors + self. 
+         * Decrement count if our own pixel is alive 
+         */
         if (last[xpos][ypos]) {
             count -= 1;
         }
         return count;
     }
 
+    /* Conway's Game of Life Rules.
+     * http://en.wikipedia.org/wiki/Conway's_Game_of_Life#Rules
+     */
     private boolean willLive(boolean alive, int aliveNeighbors) {
         if (alive && (aliveNeighbors == 3 || aliveNeighbors == 2)) {
             return true;
